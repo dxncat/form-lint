@@ -3,7 +3,7 @@ name: Build and Deploy to AWS EC2
 on:
   push:
     branches:
-      - develop  # adjust if you deploy from a different branch v1
+      - develop  # deploy from develop branch
 
 jobs:
   build-and-deploy:
