@@ -1,0 +1,25 @@
+name: Test SSH Connection to EC2
+
+on:
+  workflow_dispatch:  # permite ejecutarlo manualmente desde GitHub
+
+jobs:
+  test-connection:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test SSH Connection
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          debug: true
+          script: |
+            echo "✅ Conexión SSH exitosa!"
+            echo "Usuario actual: $(whoami)"
+            echo "Directorio actual: $(pwd)"
+            echo "Versión del sistema: $(cat /etc/os-release | head -2)"
+            echo "Node.js instalado: $(node --version 2>/dev/null || echo 'No instalado')"
+            echo "PM2 instalado: $(pm2 --version 2>/dev/null || echo 'No instalado')"

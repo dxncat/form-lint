@@ -19,30 +19,33 @@ jobs:
           node-version: '22'  # use your desired Node.js version
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci  # usa npm ci para builds más rápidos y confiables
 
       - name: Build the project
         run: npm run build
 
       # Copy the built files and server code to the EC2 instance using scp.
       - name: Copy files to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}  # default SSH port is 22
-          source: "."
-          target: "/home/${{ secrets.EC2_USERNAME }}/form-app"  # adjust target path as needed
-
-      # Execute remote commands via SSH to install dependencies and restart the app.
-      - name: Execute remote SSH commands on EC2
-        uses: appleboy/ssh-action@master
+        uses: appleboy/scp-action@v0.1.7  # usar versión específica más estable
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
+          source: "."
+          target: "/home/${{ secrets.EC2_USERNAME }}/form-app"
+          debug: true  # habilitar debug para más información
+          strip_components: 0
+
+      # Execute remote commands via SSH to install dependencies and restart the app.
+      - name: Execute remote SSH commands on EC2
+        uses: appleboy/ssh-action@v1.0.3  # usar versión específica más estable
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          debug: true  # habilitar debug para más información
           script: |
             cd ~/form-app
             # Install Node.js if not present (for Amazon Linux 2)
@@ -54,11 +57,13 @@ jobs:
             if ! command -v pm2 &> /dev/null; then
               sudo npm install -g pm2
             fi
-            # Install project dependencies
-            npm install
+            # Install project dependencies using npm ci for faster builds
+            npm ci --omit=dev
             # Setup PM2 to start on boot (only run once)
             sudo pm2 startup systemd -u $USER --hp /home/$USER || true
-            # Restart or start the application with PM2
-            pm2 restart form-app || pm2 start server.js --name form-app
+            # Stop the app gracefully if it's running
+            pm2 stop form-app || true
+            # Start the application with PM2
+            pm2 start server.js --name form-app --update-env
             # Save PM2 configuration
             pm2 save
