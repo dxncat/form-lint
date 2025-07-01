@@ -8,6 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Debug Secrets
+        run: |
+          echo "🔍 Verificando secrets disponibles:"
+          echo "EC2_HOST está definido: ${{ secrets.EC2_HOST != '' }}"
+          echo "EC2_USERNAME está definido: ${{ secrets.EC2_USERNAME != '' }}"
+          echo "EC2_PRIVATE_KEY está definido: ${{ secrets.EC2_PRIVATE_KEY != '' }}"
+          echo "EC2_PORT está definido: ${{ secrets.EC2_PORT != '' }}"
+      
       - name: Test SSH Connection
         uses: appleboy/ssh-action@v1.0.3
         with:
